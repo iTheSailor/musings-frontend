@@ -1,0 +1,842 @@
+##FRONTEND
+
+##BoardComponent.jsx
+
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import SudokuCell from './CellComponent';
+import './Sudoku.css';
+
+const SudokuBoard = ({current_state, paused, onBoardChange, showSolution, errors}) => {
+
+    const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill({ value: 0, clue: false })));
+
+   
+    
+    const initializeBoard = (current_state) => {
+        if(Array.isArray(current_state)){
+        const newBoard = current_state.map((row, rowIndex) => 
+            row.map((cell => ({
+                value: cell.value,
+                clue: cell.clue ,
+                error: false
+            }))
+        ));
+        setBoard(newBoard);
+    }
+    };
+    const handleInputChange = (newValue, rowIndex, colIndex) => {
+        if (paused) return;
+        const newBoard = [...board];
+        const numericValue = isNaN(parseInt(newValue)) ? 0 : parseInt(newValue);
+        newBoard[rowIndex][colIndex] = { ...newBoard[rowIndex][colIndex], value: numericValue };
+        setBoard(newBoard);
+        if (onBoardChange) {
+            onBoardChange(newBoard);
+        }
+    };
+    const noop = () => {};
+
+    
+    useEffect(() => { 
+        initializeBoard(current_state);
+    }, [current_state]); 
+
+    const errorsToCellPositions = (errors) => {
+        var errorCells = new Set();
+
+        // Add cells that are at the intersection of erroneous rows and columns.
+        errors.rows.forEach(rowIndex => {
+            errors.columns.forEach(colIndex => {
+                errorCells.add(`${rowIndex}-${colIndex}`);
+            });
+        });
+        var errorInstance = errorCells;
+    return errorInstance;
+    };
+
+    
+    
+    
+    useEffect(() => {
+        if (!errors || (!errors.rows.length && !errors.columns.length && !errors.boxes.length)) {
+            console.log('No errors to process.');
+            return; // Exit if there are no actual errors.
+        }
+        console.log('Updating board for errors:', errors);
+        console.log('errors!!!!!:', errors);
+        // This code should run only if `errors` change.
+        var errorCells = errorsToCellPositions(errors);
+        console.log('errorCells:', errorCells)
+        const newBoard = board.map((row, rowIndex) =>
+            row.map((cell, colIndex) => {
+                const isError = errorCells.has(`${rowIndex}-${colIndex}`);
+                return { ...cell, error: isError }; 
+            })
+        );
+        errorCells = new Set();
+        setBoard(newBoard);
+    }, [errors]);
+
+    return (
+        <>
+        <br />
+        {!paused &&
+            <>
+            <div id="sudokuBoard" className="sudoku-board">
+                {board.map((row, rowIndex) => (
+                    <div key={rowIndex} className="sudoku-row">
+                        {row.map((cell, colIndex) => (
+                            <SudokuCell
+                                key={`${rowIndex}-${colIndex}`}
+                                cell={cell}
+                                rowIndex={rowIndex}
+                                colIndex={colIndex}
+                                onInputChange={handleInputChange}
+                                isError={cell.error}
+                                
+                            />
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </>}
+        {paused && 
+            <>
+            <pausedBoard />
+            </>
+        }
+    </>
+    );
+}
+
+
+SudokuBoard.propTypes = {
+    current_state: PropTypes.array,
+    solution: PropTypes.array,
+    paused: PropTypes.bool,
+    onBoardChange: PropTypes.func,
+    showSolution: PropTypes.bool,
+    errors: PropTypes.shape({ // Use PropTypes.shape for better structuring
+        rows: PropTypes.arrayOf(PropTypes.number),
+        columns: PropTypes.arrayOf(PropTypes.number),
+        boxes: PropTypes.arrayOf(PropTypes.arrayOf(PropTypes.number))
+    }),
+};
+
+export default SudokuBoard;
+
+##CellComponent.jsx
+
+import React from 'react';
+import PropTypes from 'prop-types';
+import './Sudoku.css';
+import { useState, useEffect } from 'react';
+
+const SudokuCell = ({ cell, rowIndex, colIndex, onInputChange, isError }) => {
+    const [showError, setShowError] = useState(false);
+    useEffect(() => {   
+        setShowError(isError);
+        if (isError) {
+            const timer = setTimeout(() => setShowError(false), 2000); // 2 seconds
+            return () => clearTimeout(timer);
+        }
+    }, [isError]);
+
+    const handleChange = (event) => {
+        const newValue = event.target.value.replace(/[^1-9]/g, '');
+        if (newValue.length <= 1) {
+            onInputChange(newValue, rowIndex, colIndex);
+            setShowError(false);
+        }
+    };
+    
+
+
+    return (
+        <div className={`sudoku-cell ${colIndex === 2 || colIndex === 5 ? 'bold-border-right' : ''} ${rowIndex === 2 || rowIndex === 5 ? 'bold-border-bottom' : ''}`}>
+            <input
+                type="text"
+                value={cell.value || ''}
+                onChange={handleChange}
+                className={`sudoku-input ${cell.clue ? 'concrete' : ''} ${showError ? 'error-cell' : ''}`}
+                disabled={cell.clue}
+                
+                
+            />
+        </div>
+    );
+};
+
+SudokuCell.propTypes = {
+    cell: PropTypes.object.isRequired,
+    rowIndex: PropTypes.number.isRequired,
+    colIndex: PropTypes.number.isRequired,
+    onInputChange: PropTypes.func.isRequired,
+    isError: PropTypes.bool,
+};
+
+export default SudokuCell;
+
+##DifficultySelectorComponent.jsx
+
+import React from 'react';
+import { Dropdown, Header} from 'semantic-ui-react';
+import PropTypes from 'prop-types';
+import IsButton from '../../components/IsButton';
+import { useState, useEffect } from 'react';
+import { useNavigate} from 'react-router-dom';
+import axios from 'axios';
+
+const DifficultySelector = ({handleClose}) => {
+    DifficultySelector.propTypes = {
+        handleClose: PropTypes.func,
+    };
+
+    const [difficulty, setDifficulty] = useState('easy');
+    const navigate = useNavigate();
+
+    useEffect (() => {
+        console.log('Difficulty:', difficulty);
+    }, [difficulty]);
+
+    const startGame = () => {
+        console.log('Start game with difficulty:', difficulty);
+        console.log('user:', localStorage.getItem('userId'));
+
+        axios.get(`${process.env.REACT_APP_API_URL}/api/sudoku/play`, {
+            params: {
+                difficulty: difficulty,
+                userid: localStorage.getItem('userId')
+            }
+        }).then((response) => {
+            console.log('Game started:', response.data);
+            navigate('/apps/sudoku/game', 
+            {state: {current_state: response.data.transformed_state, 
+                solution: response.data.transformed_solution,
+                    gameid: response.data.id,
+                    time: response.data.time, 
+                    difficulty: response.data.difficulty, 
+                    userid: response.data.player.id}});
+     
+            handleClose();
+        }).catch((error) => {
+            console.error('Failed to start game:', error);
+        });
+    }
+    const difficultyOptions = [
+        { key: 'easy', text: 'Easy', value: 'easy' },
+        { key: 'medium', text: 'Medium', value: 'medium' },
+        { key: 'hard', text: 'Hard', value: 'hard' },
+    ];
+    
+
+    return (
+        <>
+        <Header as='h3' content='Select Difficulty' />
+        <div style={{display:'flex', justifyContent:'space-between'}}>
+        <Dropdown
+            placeholder='Select Difficulty'
+            selection
+            options={difficultyOptions}
+            defaultValue={difficulty}
+            onChange={(e, data) => setDifficulty(data.value)}
+        />
+        <IsButton
+            label='Start Game'
+            onClick={startGame}
+            color='green'
+        ></IsButton>
+        </div>
+        </> 
+    );
+}
+
+export default DifficultySelector;
+
+##PausedBoardComponent.jsx
+
+import React from 'react';
+import SudokuCell from './CellComponent';
+
+const PausedBoard = () => {
+    const noop = () => {}; // Presuming this is intentionally a no-operation function for placeholder.
+    const gridSize = 9; // for a standard Sudoku board
+    let board = [];
+    for (let row = 0; row < gridSize; row++) {
+        let currentRow = [];
+        for (let col = 0; col < gridSize; col++) {
+            // Insert 'SUDOKU' letters into the middle row
+            // Ensure you handle out-of-bounds correctly for '数独-SUDOKU' string
+            let cellContent = row === 4 ? ('数独-SUDOKU'[col] || '') : Math.ceil(Math.random() * 9);
+            currentRow.push(
+                <SudokuCell
+                    key={`${row}-${col}`}
+                    cell={{ value: cellContent, clue: row !== 4 }}
+                    rowIndex={row}
+                    colIndex={col}
+                    onInputChange={noop}
+                />
+            );
+        }
+        board.push(<div key={row} style={{ display: 'flex' }}>{currentRow}</div>); // Added key to each row for React list elements
+    }
+    return (
+        <div id="sudokuBoard" className="sudoku-board">
+            {board}
+        </div>
+    );
+};
+
+export default PausedBoard;
+
+
+##SavedGamesComponent.jsx
+
+import React from 'react';
+import { Dropdown, Header} from 'semantic-ui-react';
+import PropTypes from 'prop-types';
+import IsButton from '../../components/IsButton';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useNavigate} from 'react-router-dom';
+
+
+const UserSavedGames = () => {
+    
+    const [games, setGames] = useState([]);
+    const [selectedGame, setSelectedGame] = useState({});//[0].current_state);
+    const navigate = useNavigate();
+    var user = localStorage.getItem('userId');
+    var token = localStorage.getItem('token');
+
+    const gameOptions = games.map(game => {
+        return { key: game.id, text: (game.difficulty + game.created_at.slice(5,10)), value: game.id }
+    });
+
+    const handleGameSelect = (gameid) => {
+        console.log('Game selected:', gameid);
+        setSelectedGame(games.filter(game => game.id === gameid)[0]);
+    }
+
+    const onDeleteGame = () => {
+        console.log('Delete game:', selectedGame.id);
+        axios.delete(`${process.env.REACT_APP_API_URL}/api/sudoku/deleteGame`, {
+            data: {
+                gameid: selectedGame.id,
+                userid: user
+            },
+            withCredentials: true,
+            headers: { 
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.cookie.split('=')[1]
+            }
+        }).then((response) => {
+            console.log('Game deleted:', response.data);
+            setGames(games.filter(game => game.id !== selectedGame.id));
+        }).catch((error) => {
+            console.error('Failed to delete game:', error);
+        });
+    }
+
+    const onLoadGame = () => {
+        console.log('Load game:', selectedGame.id);
+        console.log('Current State:', selectedGame.transformed_state)
+        navigate('/apps/sudoku/game', 
+        {state: {current_state: selectedGame.transformed_state, 
+            solution: selectedGame.transformed_solution,
+                gameid: selectedGame.id,
+                time: selectedGame.time, 
+                difficulty: selectedGame.difficulty, 
+                userid: selectedGame.player.id}});
+    }
+
+
+
+    useEffect(() => {
+        console.log('User:', user)
+        axios.get(`${process.env.REACT_APP_API_URL}/api/sudoku/savedGames`, {
+            withCredentials: true,
+            headers: { 
+                'Content-Type': 'application/json',
+            },
+            params: {
+                userid: user
+            }
+        }).then((response) => {
+            console.log('Saved Games:', response.data);
+            setGames(response.data);
+        }).catch((error) => {
+            console.error('Failed to get saved games:', error);
+        });
+    }
+    , [user]);
+    return (
+        <>
+        <Header as='h3' content='Select Game' />
+        <Dropdown
+            placeholder='Select Game'
+            selection
+            options={gameOptions}
+            onChange={(e, data) => handleGameSelect(data.value)}
+        />
+        <IsButton
+            label='Continue Game'
+            onClick={(onLoadGame)} 
+
+        ></IsButton>
+        <IsButton
+            label='Delete Game'
+            onClick={onDeleteGame}
+            color='red'
+        ></IsButton>
+        </> 
+    );
+}
+
+UserSavedGames.propTypes = {
+    games: PropTypes.array,
+    
+};
+
+
+export default UserSavedGames;
+
+##SolutionBoardComponent.jsx
+
+import React, { useState, useEffect } from 'react';
+import PropTypes from 'prop-types';
+import SudokuCell from './CellComponent';
+import './Sudoku.css';
+
+const SolutionBoard = ({ puzzle, solution }) => {
+    const [board, setBoard] = useState(Array(9).fill().map(() => Array(9).fill({ value: 0, clue: false })));
+
+    const initializeBoard = () => {
+        if (Array.isArray(puzzle) && Array.isArray(solution)) {
+            const newBoard = puzzle.map((row, rowIndex) =>
+                row.map((cell, colIndex) => ({
+                    value: solution[rowIndex][colIndex], // Value from the solution
+                    clue: !!cell.clue, // Using !! to ensure it's a boolean
+                    error: cell.value !== 0 && cell.value !== solution[rowIndex][colIndex] // Check if there's a mismatch
+                }))
+            );
+            setBoard(newBoard);
+        }
+    };
+
+    useEffect(() => {
+        initializeBoard();
+    }, [puzzle, solution]);
+
+    return (
+        <div id="sudokuBoard" className="sudoku-board">
+            {board.map((row, rowIndex) => (
+                <div key={rowIndex} className="sudoku-row">
+                    {row.map((cell, colIndex) => (
+                        <SudokuCell
+                            key={`${rowIndex}-${colIndex}`}
+                            cell={cell}
+                            rowIndex={rowIndex}
+                            colIndex={colIndex}
+                            onInputChange={() => {}} // No-op function
+                            isError={cell.error}
+                        />
+                    ))}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+SolutionBoard.propTypes = {
+    puzzle: PropTypes.arrayOf(PropTypes.array).isRequired,
+    solution: PropTypes.arrayOf(PropTypes.array).isRequired
+};
+
+export default SolutionBoard;
+
+
+##SudokuGamePage.jsx
+
+import React from "react";
+import { useLocation } from "react-router-dom";
+import {
+  Segment,
+  Header,
+  Container,
+  Grid,
+  GridColumn,
+} from "semantic-ui-react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import CSRFToken from "../../utils/CsrfToken";
+import IsButton from "../../components/IsButton";
+import PausedSudokuBoard from "./PausedBoardComponent";
+import SudokuBoard from "./BoardComponent";
+import SolutionBoard from "./SolutionBoardComponent";
+import Timer from "../../components/Timer";
+import Cookies from "js-cookie";
+
+const SudokuGame = () => {
+  const location = useLocation();
+  const puzzle = location.state ? location.state.current_state : [];
+  const difficulty = location.state ? location.state.difficulty : "";
+  const gameid = location.state ? location.state.gameid : "";
+  const time = location.state ? location.state.time : 0;
+  const user = location.state ? location.state.userid : "";
+  const solution = location.state ? location.state.solution : [];
+  const [showSolution, setShowSolution] = useState(false);
+  const [isTimerActive, setIsTimerActive] = useState(true);
+  const [timerTime, setTimerTime] = useState(time);
+  const [currentBoard, setCurrentBoard] = useState(puzzle); // Initialize with the initial puzzle.
+  const [stop, setStop] = useState(false);
+  const navigate = useNavigate();
+  var token = Cookies.get("csrftoken");
+
+  const handleBoardChange = (newBoard) => {
+    setCurrentBoard(newBoard);
+  };
+
+  const handleGiveUp = () => {
+    setShowSolution(true);
+    console.log(solution);
+    console.log(puzzle)
+    setStop(true);
+    setIsTimerActive(false);
+    axios
+      .put(
+        `${process.env.REACT_APP_API_URL}/api/sudoku/giveUp`,
+        {
+          gameid: gameid,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((response) => {
+        console.log("Game given up:", response.data);
+        console.log(response);
+      })
+      .catch((error) => {
+        console.error("Failed to give up game:", error);
+      });
+  };
+
+  useEffect(() => {
+    if (isTimerActive) {
+      const timerId = setInterval(() => {
+        setTimerTime((timerTime) => timerTime + 1);
+      }, 1000);
+      return () => clearInterval(timerId);
+    }
+  }, [isTimerActive]);
+
+  const saveTime = () => {
+    // console.log('Save time:', timerTime);
+    axios
+      .put(
+        `${process.env.REACT_APP_API_URL}/api/sudoku/updateTime`,
+        {
+          sudoku_id: gameid,
+          time: timerTime,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((response) => {
+        // console.log('Time saved:', response.data);
+      })
+      .catch((error) => {
+        console.error("Failed to save time:", error);
+      });
+  };
+
+  const saveGame = () => {
+    console.log("Save game:", gameid);
+    axios
+      .put(
+        `${process.env.REACT_APP_API_URL}/api/sudoku/saveGame`,
+        {
+          gameid: gameid,
+          userid: user,
+          current_state: currentBoard,
+          time: timerTime,
+        },
+        {
+          withCredentials: true,
+          headers: {
+            "X-CSRFToken": token,
+            "Content-Type": "application/json",
+          },
+        }
+      )
+      .then((response) => {
+        console.log("Game saved:", response.data);
+      })
+      .catch((error) => {
+        console.error("Failed to save game:", error);
+      });
+  };
+
+  const [errors, setErrors] = useState({ rows: [], columns: [], boxes: [] });
+  useEffect(() => {
+    if (
+      errors &&
+      (errors.rows.length || errors.columns.length || errors.boxes.length)
+    ) {
+      const errorTimeout = setTimeout(() => {
+        // Clear the errors from state here if necessary
+        setErrors({ rows: [], columns: [], boxes: [] });
+      }, 1000); // Match this duration to your CSS animation
+
+      return () => clearTimeout(errorTimeout);
+    }
+  }, [errors]);
+
+  const checkSolution = () => {
+    axios
+      .post(
+        `${process.env.REACT_APP_API_URL}/api/sudoku/checkSolution`,
+        {
+          board: currentBoard, // Adjust with the correct format
+        },
+        {
+          headers: { "Content-Type": "application/json", "X-CSRFToken": token },
+          withCredentials: true,
+        }
+      )
+      .then((response) => {
+        const { status, isCorrect, errors } = response.data;
+        console.log("Response:", response.data);
+        console.log("Status:", status);
+        console.log("Correct:", isCorrect ? "Yes" : "No");
+        console.log("Errors:", errors);
+        if (status === "success") {
+          console.log("Solution checked:", isCorrect);
+
+          if (isCorrect) {
+            alert("Congratulations! Correct solution.");
+          } else {
+            alert("Incorrect solution.");
+            setErrors(errors);
+            console.log("Errors:", errors);
+          }
+          // handle game win logic here
+        } else {
+          console.log("Issue sending");
+        }
+      })
+      .catch((error) => {
+        console.error("Error checking solution:", error);
+      });
+  };
+
+  const backToMenu = () => {
+    console.log("Back to menu");
+    navigate("/apps/sudoku");
+  };
+
+  const noop = () => {};
+
+  const toggleTimer = () => {
+    setIsTimerActive(!isTimerActive);
+  };
+
+  return (
+    <>
+      <Container
+        style={{
+          display: "flex",
+          justifyContent: "space-evenly",
+          alignItems: "center",
+        }}
+      >
+        <Segment style={{ display: "flex", flexDirection: "column" }}>
+          {!showSolution && (
+            <>
+              <Header as="h3">Game Controls</Header>
+              <IsButton
+                label="Check"
+                color="green"
+                style={{ marginBottom: "1em" }}
+                onClick={checkSolution}
+              ></IsButton>
+              <IsButton
+                label={isTimerActive ? "Pause" : "Resume"}
+                color="grey"
+                style={{ marginBottom: "1em" }}
+                onClick={toggleTimer}
+              ></IsButton>
+              <IsButton
+                label="Save Game"
+                color="blue"
+                style={{ marginBottom: "1em" }}
+                onClick={saveGame}
+              ></IsButton>
+              <IsButton
+                label="Give Up"
+                color="red"
+                onClick={handleGiveUp}
+              ></IsButton>
+            </>
+          )}
+          {showSolution && (
+            <>
+              <Header as="h3">Back to Menu</Header>
+              <IsButton
+                label="Back"
+                color="blue"
+                onClick={backToMenu}
+              ></IsButton>
+            </>
+          )}
+        </Segment>
+        <Segment>
+          {!showSolution && (
+            <>
+              <Grid
+                columns={3}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-evenly",
+                  alignItems: "center",
+                  textAlign: "center",
+                }}
+              >
+                <GridColumn align="left">
+                  <Header as="h3" style={{ textTransform: "capitalize" }}>
+                    {difficulty} Sudoku
+                  </Header>
+                </GridColumn>
+                <GridColumn></GridColumn>
+                <GridColumn align="right">
+                  <Timer
+                    isActive={isTimerActive}
+                    onStop={stop}
+                    onTimeChange={saveTime}
+                    initialTime={timerTime}
+                  />
+                </GridColumn>
+              </Grid>
+              {isTimerActive && (
+                <SudokuBoard
+                  current_state={puzzle}
+                  onBoardChange={handleBoardChange}
+                  errors={errors}
+                />
+              )}
+              {!isTimerActive && (
+                <>
+                  <br />
+                  <PausedSudokuBoard />
+                </>
+              )}
+            </>
+          )}
+          <br />
+          {showSolution && (
+            <>
+              <Grid
+                columns={3}
+                style={{
+                  display: "flex",
+                  justifyContent: "space-evenly",
+                  alignItems: "center",
+                  textAlign: "center",
+                }}
+              >
+                <GridColumn align="left">
+                  <Header as="h3" style={{ textTransform: "capitalize" }}>
+                    Game Over - Lost
+                  </Header>
+                </GridColumn>
+                <GridColumn></GridColumn>
+                <GridColumn align="right">
+                  <Timer
+                    isActive={isTimerActive}
+                    onStop={stop}
+                    onTimeChange={saveTime}
+                    initialTime={timerTime}
+                  />
+                </GridColumn>
+              </Grid>
+              <br />
+                <SolutionBoard puzzle={puzzle} solution={solution} />
+            </>
+          )}
+        </Segment>
+      </Container>
+    </>
+  );
+};
+
+export default SudokuGame;
+
+
+##SudokuPage.jsx
+
+import React from 'react';
+import { Container, Header, Segment, Card, Grid, Divider } from 'semantic-ui-react';
+import IsPortal from '../../components/IsPortal';
+import DifficultySelector from './DifficultySelectorComponent';
+import UserSavedGames from './SavedGamesComponent';
+
+
+const SudokuPage = () => {
+    return (
+        <Container>
+            <br />
+            <Header as='h1'>Sudoku</Header>
+            <Segment style={{ padding: '2em 2em', margin: '2em'}}>
+                <Grid columns={2} relaxed='very'>
+                    <Grid.Column>
+                        <Card>
+                            <Card.Content>
+                                <Card.Header>Play</Card.Header>
+                                <Card.Description>
+                                    Play a game of Sudoku
+                                </Card.Description>
+                                <IsPortal
+                                    label='Go!'
+                                    content={<p>Play Sudoku</p>}
+                                >
+                                    <DifficultySelector />
+                                </IsPortal>     
+                            </Card.Content>
+                        </Card>
+                    </Grid.Column>
+                    <Grid.Column>
+                        <Card>
+                            <Card.Content>
+                                <Card.Header>Continue</Card.Header>
+                                <Card.Description>
+                                    Continue one of your saved games
+                                </Card.Description>
+                                <IsPortal
+                                    label='Continue'
+                                    >
+                                    <UserSavedGames />
+
+                                </IsPortal>
+                            </Card.Content>
+                        </Card>
+                    </Grid.Column>
+                </Grid>
+                <Divider vertical>Or</Divider>
+            </Segment>
+        </Container>
+    );
+};
+
+export default SudokuPage;
