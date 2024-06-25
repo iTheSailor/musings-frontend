@@ -2,12 +2,12 @@ import React from 'react';
 import { Segment, Grid, Header, Button } from 'semantic-ui-react';
 import PropTypes from 'prop-types';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, TimeScale } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, TimeScale, BarController } from 'chart.js';
 import 'chartjs-adapter-date-fns';
 import zoomPlugin from 'chartjs-plugin-zoom';
 
 // Register the components for Chart.js
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, TimeScale, zoomPlugin);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, TimeScale, BarController, zoomPlugin);
 
 
 const StockAnalysis = ({ priceHistory, range, interval, setRange, setInterval }) => {
@@ -175,7 +175,15 @@ const StockAnalysis = ({ priceHistory, range, interval, setRange, setInterval })
 };
 
 StockAnalysis.propTypes = {
-    priceHistory: PropTypes.object.isRequired,
+    priceHistory: PropTypes.objectOf(
+        PropTypes.shape({
+            Close: PropTypes.number.isRequired,
+            Open: PropTypes.number.isRequired,
+            High: PropTypes.number.isRequired,
+            Low: PropTypes.number.isRequired,
+            Volume: PropTypes.number.isRequired,
+        })
+    ).isRequired,
     range: PropTypes.string.isRequired,
     interval: PropTypes.string.isRequired,
     setRange: PropTypes.func.isRequired,
