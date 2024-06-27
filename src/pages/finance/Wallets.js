@@ -23,11 +23,8 @@ const Wallets = ({ user, watchlist }) => {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_wallets`, {
                 params: { user_id: user }
             });
-            const walletsData = res.data.wallets.map(wallet => {
-                const currentValue = wallet.balance + (wallet.stocks ? wallet.stocks.reduce((sum, stock) => sum + stock.current_value, 0) : 0);
-                return { ...wallet, currentValue };
-            });
-            setWallets(walletsData);
+            setWallets(res.data.wallets);
+            console.log(res.data.wallets);
         } catch (err) {
             console.log(err);
         }
@@ -60,14 +57,16 @@ const Wallets = ({ user, watchlist }) => {
             const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_wallet_details`, {
                 params: { wallet_id: walletId }
             });
-            setWalletDetails(res.data.wallet);
+            const walletData = res.data.wallet;
+            console.log(res.data.wallet);
+            setWalletDetails(walletData);
             setSelectedWallet(walletId);
             setOpen(true);
         } catch (err) {
             console.log(err);
         }
     };
-
+    
     const handleRenameWallet = async () => {
         try {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/finance/rename_wallet`, {
@@ -201,7 +200,7 @@ const Wallets = ({ user, watchlist }) => {
                             <Table.Row key={wallet.wallet_id} active={wallet.wallet_id === activeWallet}>
                                 <Table.Cell>{wallet.wallet_name}</Table.Cell>
                                 <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(wallet.balance)}</Table.Cell>
-                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(wallet.currentValue)}</Table.Cell>
+                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(wallet.current_value)}</Table.Cell>
                                 <Table.Cell>
                                     <Button icon onClick={() => handleWalletClick(wallet.wallet_id)}>
                                         <Icon name='eye' />
@@ -265,36 +264,38 @@ const Wallets = ({ user, watchlist }) => {
                 </Segment>
             )}
             <Modal open={open} onClose={() => setOpen(false)}>
-                <Modal.Header>Wallet Details</Modal.Header>
-                <Modal.Content>
-                    <Header as='h3'>{walletDetails.wallet_name}</Header>
-                    <p>Balance: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(walletDetails.balance)}</p>
-                    <p>Current Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(walletDetails.balance + (walletDetails.stocks ? walletDetails.stocks.reduce((sum, stock) => sum + stock.current_value, 0) : 0))}</p>
-                    <Table celled>
-                        <Table.Header>
-                            <Table.Row>
-                                <Table.HeaderCell>Stock Symbol</Table.HeaderCell>
-                                <Table.HeaderCell>Quantity</Table.HeaderCell>
-                                <Table.HeaderCell>Bought Price</Table.HeaderCell>
-                                <Table.HeaderCell>Current Value</Table.HeaderCell>
+            <Modal.Header>Wallet Details</Modal.Header>
+            <Modal.Content>
+                <Header as='h3'>{walletDetails.wallet_name}</Header>
+                <p>Balance: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.balance))}</p>
+                <p>Current Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.current_value))}</p>
+                <Table celled>
+                    <Table.Header>
+                        <Table.Row>
+                            <Table.HeaderCell>Stock Symbol</Table.HeaderCell>
+                            <Table.HeaderCell>Quantity</Table.HeaderCell>
+                            <Table.HeaderCell>Bought Price</Table.HeaderCell>
+                            <Table.HeaderCell>Current Price</Table.HeaderCell>
+                            <Table.HeaderCell>Current Value</Table.HeaderCell>
+                        </Table.Row>
+                    </Table.Header>
+                    <Table.Body>
+                        {walletDetails.stocks && walletDetails.stocks.map(stock => (
+                            <Table.Row key={stock.symbol}>
+                                <Table.Cell>{stock.symbol}</Table.Cell>
+                                <Table.Cell>{stock.quantity}</Table.Cell>
+                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.bought_price))}</Table.Cell>
+                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.current_price))}</Table.Cell>
+                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.current_value))}</Table.Cell>
                             </Table.Row>
-                        </Table.Header>
-                        <Table.Body>
-                            {walletDetails.stocks && walletDetails.stocks.map(stock => (
-                                <Table.Row key={stock.symbol}>
-                                    <Table.Cell>{stock.symbol}</Table.Cell>
-                                    <Table.Cell>{stock.quantity}</Table.Cell>
-                                    <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.bought_price)}</Table.Cell>
-                                    <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.current_value)}</Table.Cell>
-                                </Table.Row>
-                            ))}
-                        </Table.Body>
-                    </Table>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button onClick={() => setOpen(false)}>Close</Button>
-                </Modal.Actions>
-            </Modal>
+                        ))}
+                    </Table.Body>
+                </Table>
+            </Modal.Content>
+            <Modal.Actions>
+                <Button onClick={() => setOpen(false)}>Close</Button>
+            </Modal.Actions>
+        </Modal>
             <Modal open={renameOpen} onClose={() => setRenameOpen(false)}>
                 <Modal.Header>Rename Wallet</Modal.Header>
                 <Modal.Content>
