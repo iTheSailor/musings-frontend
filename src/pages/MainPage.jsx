@@ -21,14 +21,16 @@ const MainPage = () => {
     <Segment style={{ padding: "8em 0em" }} vertical>
       <Grid container stackable verticalAlign="middle">
         <Grid.Row>
-          <Grid.Column width={8}>
+          <Grid.Column width={8} textAlign="center">
             <Header
               as="h3"
               style={{ fontSize: "2em" }}
               content="Skillset"
-            ></Header>
+              textAlign="center"
+            />
             <List horizontal
                 style={{ fontSize: "1.33em" }}
+                celled
             >
                 <List.Item >Python</List.Item>
                 <List.Item >Postgres</List.Item>
@@ -37,23 +39,33 @@ const MainPage = () => {
                 <List.Item >React</List.Item>
                 <List.Item >Django</List.Item>
                 <List.Item >Linux Systems</List.Item>
+                </List>
+            <List horizontal
+                celled
+            >
                 <List.Item >Git</List.Item>
+                <List.Item >HTML/CSS</List.Item>
+                <List.Item >AWS</List.Item>
+                <List.Item >Docker</List.Item>
+                <List.Item >Vim</List.Item>
             </List>
             <Header
               as="h3"
               style={{ fontSize: "2em" }}
               content="Professional Interests"
-            ></Header>
+              textAlign="center"
+            />
             <List horizontal
-
                 style={{ fontSize: "1.33em" }}
+                celled
             >
                 <List.Item >Full Stack Development</List.Item>
                 <List.Item >Data Science</List.Item>
                 <List.Item >Machine Learning</List.Item>
                 <List.Item >Artificial Intelligence</List.Item>
             </List>
-            <List horizontal>
+            <List horizontal
+                  celled>
                 <List.Item >Cloud Computing</List.Item>
                 <List.Item >Cybersecurity</List.Item>
                 <List.Item >Automation</List.Item>
@@ -100,7 +112,7 @@ const MainPage = () => {
     </Segment>
 
     <Segment style={{ padding: "8em 0em" }} vertical>
-      <Container text>
+      <Container text textAlign="center">
         <Header as="h3" style={{ fontSize: "2em" }}>
           What Am I Currently Working On?
         </Header>
@@ -122,7 +134,7 @@ const MainPage = () => {
           style={{ margin: "3em 0em", textTransform: "uppercase" }}
         ></Divider>
 
-        <Header as="h3" style={{ fontSize: "2em" }}>
+        <Header as="h3" style={{ fontSize: "2em" }} textAlign="center">
           Want To See My Resume?
         </Header>
         <p style={{ fontSize: "1.33em" }}>
