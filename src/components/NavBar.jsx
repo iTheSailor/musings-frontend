@@ -47,7 +47,7 @@ const DesktopContainer = ({ children }) => {
   const { loggedIn, logOut } = useAuth() || {}; // Use the authentication state and logOut function
 
   return (
-    <Media greaterThan='mobile' className='AppNavbar'>
+    <Media greaterThan='mobile' className='AppNavbar' style={{marginBottom:'2rem'}}>
       <InView onChange={toggleFixedMenu}>
         <Segment
           inverted
@@ -60,6 +60,7 @@ const DesktopContainer = ({ children }) => {
             pointing={!fixed}
             secondary={!fixed}
             size='large'
+            
           >
             <Container>
               <NavDropdown />
@@ -78,7 +79,9 @@ const DesktopContainer = ({ children }) => {
                 </>
               ) : (
                 <Menu.Item position='right'>
+                  
                   <LogOut/>
+                  
                 </Menu.Item>
               )}
             </Container>

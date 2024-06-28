@@ -5,6 +5,7 @@ import Cookies from 'js-cookie';
 import axios from 'axios';
 import Watchlist from './Watchlist';
 import IsButton from '../../components/IsButton';
+import Wallets from './Wallets';  // Import Wallets component
 
 const FinancePage = () => {
     const [symbol, setSymbol] = useState('');
@@ -13,6 +14,11 @@ const FinancePage = () => {
     const [watchlist, setWatchlist] = useState([]);
     const [user, setUser] = useState(localStorage.getItem('userId'));
     const [stockWatched, setStockWatched] = useState(false);
+    const [activeWallet, setActiveWallet] = useState(null);
+    const [quantity, setQuantity] = useState('');
+    const [price, setPrice] = useState('');
+    const [totalPrice, setTotalPrice] = useState(0);
+
 
     useEffect(() => {
         axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_watchlist`, {
@@ -29,20 +35,66 @@ const FinancePage = () => {
         }
     }, []);
 
-
+    //
     const handleSearch = () => {
         axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_stock`, {
             params: { symbol: symbol.toUpperCase(), user }
         })
             .then(res => {
                 setStock(res.data.symbol);
-                console.log(res.data.symbol);
                 setOpen(true);
                 setStockWatched(watchlist.includes(symbol.toUpperCase()));
+                setPrice(res.data.symbol.currentPrice);
+                setTotalPrice(quantity * res.data.symbol.currentPrice);
             })
             .catch(err => console.log(err));
     };
 
+    const handleQuantityChange = (e) => {
+        const value = e.target.value;
+        setQuantity(value);
+        setTotalPrice(value * price);
+    };
+
+    const handleBuyStock = async () => {
+        try {
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/finance/add_stock_to_wallet`, {
+                wallet_id: activeWallet,
+                symbol: stock.symbol,
+                quantity: quantity,
+                bought_price: price
+            }, {
+                withCredentials: true,
+                headers: { 'X-CSRFToken': Cookies.get('csrftoken') }
+            });
+            setQuantity('');
+            setPrice('');
+            setTotalPrice(0);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    const handleSellStock = async () => {
+        try {
+            await axios.post(`${process.env.REACT_APP_API_URL}/api/finance/sell_stock_from_wallet`, {
+                wallet_id: activeWallet,
+                symbol: stock.symbol,
+                quantity: quantity,
+                sold_price: price
+            }, {
+                withCredentials: true,
+                headers: { 'X-CSRFToken': Cookies.get('csrftoken') }
+            });
+            setQuantity('');
+            setPrice('');
+            setTotalPrice(0);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    // watchlist functions
     const addToWatchlist = (symbol) => {
         const formData = new FormData();
         formData.append('symbol', symbol);
@@ -74,8 +126,6 @@ const FinancePage = () => {
             })
             .catch(err => console.log(err));
     };
-
-    
 
     return (
         <Container>
@@ -131,17 +181,50 @@ const FinancePage = () => {
                             </Grid.Column>
                         </Grid>
                     </Segment>
+                    <Segment>
+                        <Header as='h3'>Buy/Sell Stock</Header>
+                        <Form onSubmit={handleBuyStock}>
+                            <Form.Field>
+                                <Input
+                                    placeholder='Quantity'
+                                    type='number'
+                                    value={quantity}
+                                    onChange={handleQuantityChange}
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                <Input
+                                    placeholder='Price'
+                                    type='number'
+                                    step='0.01'
+                                    value={price}
+                                    disabled
+                                />
+                            </Form.Field>
+                            <Form.Field>
+                                <Input
+                                    placeholder='Total Price'
+                                    type='number'
+                                    step='0.01'
+                                    value={totalPrice}
+                                    disabled
+                                />
+                            </Form.Field>
+                            <Button type='submit' primary>Buy Stock</Button>
+                            <Button type='button' color='red' onClick={handleSellStock}>Sell Stock</Button>
+                        </Form>
+                    </Segment>
                 </Segment>
             </Portal>
 
             <Segment>
-            <span className='d-flex align-items-center'>
-                <Icon name='dollar'  circular />
-                <Header as='h1' className='m-0' >
-                    <Header.Content>Finance</Header.Content>
-                </Header>
-            </span>
-                
+                <span className='d-flex align-items-center'>
+                    <Icon name='dollar' circular />
+                    <Header as='h1' className='m-0' >
+                        <Header.Content>Finance</Header.Content>
+                    </Header>
+                </span>
+
                 <p>Search for a stock symbol to get the latest information.</p>
                 <Form onSubmit={handleSearch}>
                     <Form.Field>
@@ -157,6 +240,9 @@ const FinancePage = () => {
             </Segment>
             <Segment>
                 <Watchlist user={user} watchlist={watchlist} removeFromWatchlist={removeFromWatchlist} />
+            </Segment>
+            <Segment>
+                <Wallets user={user} watchlist={watchlist} />  {/* Include Wallets component with watchlist prop */}
             </Segment>
         </Container>
     );

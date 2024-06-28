@@ -12,7 +12,7 @@ const HomepageHeading = ({ mobile }) => (
           fontSize: mobile ? '2em' : '4em',
           fontWeight: 'normal',
           marginBottom: 0,
-          marginTop: mobile ? '1.5em' : '3em',
+          marginTop: '1.5em',
         }}
       />
       <Header
@@ -25,10 +25,22 @@ const HomepageHeading = ({ mobile }) => (
           marginTop: mobile ? '0.5em' : '1.5em',
         }}
       />
-      <Button primary size='huge'>
-        Get Started
-        <Icon name='right arrow' />
-      </Button>
+      <Container text size='huge'  >
+        <Icon name='warning sign' style={{color:'yellow'}}/>
+        <p style={{color:'yellow'}}>
+          This site is under construction, please bear in mind that some features may not work as expected.
+        </p>
+        <p>
+          The frontend of this website is built with React, Node.js, Semantic UI and deployed on Render.
+        </p>
+        <p>
+          The backend is built with Django and deployed on AWS.
+        </p>
+        <p>
+          Last updated: June 27, 2024
+        </p>
+
+      </Container>
     </Container>
   )
   
