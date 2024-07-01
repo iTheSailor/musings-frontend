@@ -37,7 +37,7 @@ const HomepageHeading = ({ mobile }) => (
           The backend is built with Django and deployed on AWS.
         </p>
         <p>
-          Last updated: June 27, 2024
+          Last updated: July 1st, 2024
         </p>
 
       </Container>

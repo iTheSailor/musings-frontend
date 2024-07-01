@@ -48,25 +48,9 @@ const Watchlist = ({ user, watchlist, removeFromWatchlist }) => {
             .catch(err => console.log(err));
     }, [user]);
 
-    const handleBuyStockFromWatchlist = (symbol) => {
-        const walletId = selectedWallet;
-        const stock = stocks.find(s => s.symbol === symbol);
-        const quantity = 1;  // Set default quantity to 1 for simplicity
+    
 
-        axios.post(`${process.env.REACT_APP_API_URL}/api/finance/add_stock_to_wallet`, {
-            wallet_id: walletId,
-            symbol: symbol,
-            quantity: quantity,
-            bought_price: stock.currentPrice
-        }, {
-            withCredentials: true,
-            headers: { 'X-CSRFToken': Cookies.get('csrftoken') }
-        })
-            .then(res => {
-                // Handle success
-            })
-            .catch(err => console.log(err));
-    };
+    
 
     const walletOptions = wallets.map(wallet => ({
         key: wallet.wallet_id,
@@ -126,9 +110,7 @@ const Watchlist = ({ user, watchlist, removeFromWatchlist }) => {
                                 <Button icon color='red' size='small' onClick={() => removeFromWatchlist(stock.symbol)}>
                                     <Icon name='minus' />
                                 </Button>
-                                <Button icon color='green' size='small' onClick={() => handleBuyStockFromWatchlist(stock.symbol)}>
-                                    <Icon name='add' />
-                                </Button>
+                                
                             </Table.Cell>
                         </Table.Row>
                     ))}

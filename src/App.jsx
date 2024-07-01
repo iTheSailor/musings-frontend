@@ -7,6 +7,7 @@ import SudokuGame from './pages/sudoku/SudokuGamePage';
 import PortfolioPage from './pages/portfolio/PortfolioPage';
 import FinancePage from './pages/finance/FinancePage';
 import StockPage from './pages/finance/StockPage';
+import WalletPage from './pages/finance/WalletPage';
 import TodoPage from './pages/todo/TodoPage';
 import MainPage from './pages/MainPage';
 import NavBar from './components/NavBar';
@@ -23,6 +24,7 @@ const BaseLayout = () => (
         <Route path="/apps/sudoku/game" element={<SudokuGame />} />
         <Route path="/apps/todo" element={<TodoPage />} />
         <Route path="/apps/finance" element={<FinancePage />} />
+        <Route path="/apps/finance/wallet" element={<WalletPage />} />
         <Route path="/apps/finance/stock/:symbol" element={<StockPage />} />
         <Route path="/portfolio" element={<PortfolioPage />} />
 
