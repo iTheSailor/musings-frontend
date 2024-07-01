@@ -127,6 +127,16 @@ const FinancePage = () => {
             .catch(err => console.log(err));
     };
 
+    const handleSymbolChange = (e, { value }) => {
+        setSymbol(value);
+    };
+
+    const watchlistOptions = watchlist.map(symbol => ({
+        key: symbol,
+        text: symbol,
+        value: symbol
+    }));
+
     return (
         <Container>
             <Portal open={open} onClose={() => setOpen(false)}>
@@ -181,50 +191,17 @@ const FinancePage = () => {
                             </Grid.Column>
                         </Grid>
                     </Segment>
-                    <Segment>
-                        <Header as='h3'>Buy/Sell Stock</Header>
-                        <Form onSubmit={handleBuyStock}>
-                            <Form.Field>
-                                <Input
-                                    placeholder='Quantity'
-                                    type='number'
-                                    value={quantity}
-                                    onChange={handleQuantityChange}
-                                />
-                            </Form.Field>
-                            <Form.Field>
-                                <Input
-                                    placeholder='Price'
-                                    type='number'
-                                    step='0.01'
-                                    value={price}
-                                    disabled
-                                />
-                            </Form.Field>
-                            <Form.Field>
-                                <Input
-                                    placeholder='Total Price'
-                                    type='number'
-                                    step='0.01'
-                                    value={totalPrice}
-                                    disabled
-                                />
-                            </Form.Field>
-                            <Button type='submit' primary>Buy Stock</Button>
-                            <Button type='button' color='red' onClick={handleSellStock}>Sell Stock</Button>
-                        </Form>
-                    </Segment>
+                    
                 </Segment>
             </Portal>
 
             <Segment>
                 <span className='d-flex align-items-center'>
                     <Icon name='dollar' circular />
-                    <Header as='h1' className='m-0' >
+                    <Header as='h1' className='m-0'>
                         <Header.Content>Finance</Header.Content>
                     </Header>
                 </span>
-
                 <p>Search for a stock symbol to get the latest information.</p>
                 <Form onSubmit={handleSearch}>
                     <Form.Field>
@@ -233,9 +210,15 @@ const FinancePage = () => {
                             placeholder='Enter stock symbol...'
                             value={symbol}
                             onChange={e => setSymbol(e.target.value)}
+                            list='watchlist-options'
                         />
+                        <datalist id='watchlist-options'>
+                            {watchlist.map(symbol => (
+                                <option key={symbol} value={symbol} />
+                            ))}
+                        </datalist>
                     </Form.Field>
-                    <IsButton label='Search' value='Submit' />
+                    <Button type='Submit' primary fluid> Search </Button>
                 </Form>
             </Segment>
             <Segment>
