@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import { Container, Header, Form, Input, Segment, Button, Table, Icon, Modal } from 'semantic-ui-react';
+import { Container, Header, Form, Input, Segment, Button, Table, Icon, Modal, Dropdown, Portal, Grid, Divider, Message } from 'semantic-ui-react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { Link } from 'react-router-dom';
 
 const Wallets = ({ user, watchlist }) => {
     const [wallets, setWallets] = useState([]);
@@ -17,6 +18,9 @@ const Wallets = ({ user, watchlist }) => {
     const [quantity, setQuantity] = useState('');
     const [price, setPrice] = useState('');
     const [totalPrice, setTotalPrice] = useState(0);
+    const [stock, setStock] = useState({});
+    const [stockPortalOpen, setStockPortalOpen] = useState(false);
+    const [errorMessage, setErrorMessage] = useState('');
 
     const fetchWallets = useCallback(async () => {
         try {
@@ -24,7 +28,6 @@ const Wallets = ({ user, watchlist }) => {
                 params: { user_id: user }
             });
             setWallets(res.data.wallets);
-            console.log(res.data.wallets);
         } catch (err) {
             console.log(err);
         }
@@ -58,15 +61,34 @@ const Wallets = ({ user, watchlist }) => {
                 params: { wallet_id: walletId }
             });
             const walletData = res.data.wallet;
-            console.log(res.data.wallet);
             setWalletDetails(walletData);
+            processWalletDetails(walletData);
             setSelectedWallet(walletId);
             setOpen(true);
         } catch (err) {
             console.log(err);
         }
     };
-    
+
+    const processWalletDetails = (walletData) => {
+        let totalStockValue = 0;
+        const updatedStocks = walletData.stocks.map(stock => {
+            const currentPrice = parseFloat(stock.current_price);
+            if (isNaN(currentPrice)) {
+                console.error(`Invalid current price for ${stock.symbol}: ${stock.current_price}`);
+                return { ...stock, current_value: NaN, current_price: NaN };
+            }
+            const currentValue = currentPrice * stock.quantity;
+            totalStockValue += currentValue;
+            console.log(`Symbol: ${stock.symbol}, Quantity: ${stock.quantity}, Current Price: ${currentPrice}, Current Value: ${currentValue}`);
+            return { ...stock, current_value: currentValue, current_price: currentPrice };
+        });
+        walletData.stocks = updatedStocks;
+        walletData.current_value = parseFloat(walletData.balance) + totalStockValue;
+        console.log(`Wallet Name: ${walletData.wallet_name}, Balance: ${walletData.balance}, Current Value: ${walletData.current_value}`);
+        setWalletDetails(walletData);
+    };
+
     const handleRenameWallet = async () => {
         try {
             const res = await axios.post(`${process.env.REACT_APP_API_URL}/api/finance/rename_wallet`, {
@@ -105,6 +127,12 @@ const Wallets = ({ user, watchlist }) => {
     };
 
     const handleBuyStock = async () => {
+        const total = quantity * price;
+        const walletBalance = parseFloat(walletDetails.balance);
+        if (total > walletBalance) {
+            setErrorMessage('Total price exceeds available balance.');
+            return;
+        }
         try {
             await axios.post(`${process.env.REACT_APP_API_URL}/api/finance/add_stock_to_wallet`, {
                 wallet_id: activeWallet,
@@ -119,6 +147,7 @@ const Wallets = ({ user, watchlist }) => {
             setQuantity('');
             setPrice('');
             setTotalPrice(0);
+            setErrorMessage('');
             handleWalletClick(activeWallet);
         } catch (err) {
             console.log(err);
@@ -146,34 +175,57 @@ const Wallets = ({ user, watchlist }) => {
         }
     };
 
-    const handleSymbolChange = (e) => {
-        const value = e.target.value.toUpperCase();
+    const handleSymbolChange = (e, { value }) => {
         setSymbol(value);
-        if (value.length > 0) {
-            axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_stock`, {
-                params: { symbol: value }
-            })
-            .then(res => {
-                setPrice(res.data.symbol.currentPrice);
-                setTotalPrice(quantity * res.data.symbol.currentPrice);
-            })
-            .catch(err => console.log(err));
-        } else {
-            setPrice('');
-            setTotalPrice(0);
-        }
     };
 
     const handleQuantityChange = (e) => {
         const value = e.target.value;
         setQuantity(value);
-        setTotalPrice(value * price);
+        const total = value * price;
+        setTotalPrice(total);
+        const walletBalance = parseFloat(walletDetails.balance);
+        console.log(`Total: ${total}, Wallet Balance: ${walletBalance}`);
+        if (total > walletBalance) {
+            setErrorMessage('Total price exceeds available balance.');
+        } else {
+            setErrorMessage('');
+        }
     };
+
+    const handleSearchStock = async () => {
+        try {
+            const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/finance/get_stock`, {
+                params: { symbol: symbol.toUpperCase(), user }
+            });
+            const stockData = res.data.symbol;
+            setPrice(stockData.currentPrice);
+            setTotalPrice(quantity * stockData.currentPrice);
+            setStock(stockData);
+            setStockPortalOpen(true);
+        } catch (err) {
+            console.log(err);
+        }
+    };
+
+    // Create options for the dropdown from the watchlist
+    const watchlistOptions = watchlist.map(symbol => ({
+        key: symbol,
+        text: symbol,
+        value: symbol
+    }));
 
     return (
         <Container>
             <Segment>
+                <Grid columns={2}>
+                    <Grid.Column textAlign='left'>
                 <Header as='h2'>My Wallets</Header>
+                    </Grid.Column>
+                    <Grid.Column textAlign='right'>
+                        <Button as={Link} to='/apps/finance/wallet' style={{marginBottom:'.5rem'}}>Wallets Page</Button>
+                    </Grid.Column>
+                </Grid>
                 <Form onSubmit={handleCreateWallet}>
                     <Form.Field>
                         <Input
@@ -182,7 +234,7 @@ const Wallets = ({ user, watchlist }) => {
                             onChange={e => setWalletName(e.target.value)}
                         />
                     </Form.Field>
-                    <Button type='submit' primary>Create Wallet</Button>
+                    <Button type='submit' primary fluid>Create Wallet</Button>
                 </Form>
             </Segment>
             <Segment>
@@ -221,81 +273,97 @@ const Wallets = ({ user, watchlist }) => {
                 </Table>
             </Segment>
             {activeWallet && (
-                <Segment>
-                    <Header as='h3'>Active Wallet: {wallets.find(wallet => wallet.wallet_id === activeWallet)?.wallet_name}</Header>
-                    <Form onSubmit={handleBuyStock}>
-                        <Form.Field>
-                            <Input
-                                placeholder='Stock Symbol'
-                                value={symbol}
-                                onChange={handleSymbolChange}
-                            />
-                        </Form.Field>
-                        <Form.Field>
-                            <Input
-                                placeholder='Quantity'
-                                type='number'
-                                value={quantity}
-                                onChange={handleQuantityChange}
-                            />
-                        </Form.Field>
-                        <Form.Field>
-                            <Input
-                                placeholder='Price'
-                                type='number'
-                                step='0.01'
-                                value={price}
-                                onChange={e => setPrice(e.target.value)}
-                                disabled
-                            />
-                        </Form.Field>
-                        <Form.Field>
-                            <Input
-                                placeholder='Total Price'
-                                type='number'
-                                step='0.01'
-                                value={totalPrice}
-                                disabled
-                            />
-                        </Form.Field>
-                        <Button type='submit' primary>Buy Stock</Button>
-                        <Button type='button' color='red' onClick={handleSellStock}>Sell Stock</Button>
-                    </Form>
-                </Segment>
-            )}
+            <Segment>
+                <Header as='h3'>Active Wallet: {wallets.find(wallet => wallet.wallet_id === activeWallet)?.wallet_name}</Header>
+                <Form onSubmit={handleBuyStock}>
+                    <Form.Field>
+                        <Dropdown
+                            placeholder='Select Stock Symbol'
+                            fluid
+                            search
+                            selection
+                            options={watchlistOptions}
+                            value={symbol}
+                            onChange={handleSymbolChange}
+                        />
+                    </Form.Field>
+                    <Form.Field>
+                        <Input
+                            placeholder='Enter Stock Symbol'
+                            value={symbol}
+                            onChange={e => setSymbol(e.target.value)}
+                        />
+                        <Button onClick={handleSearchStock} type='button'>Search</Button>
+                    </Form.Field>
+                    <Form.Field>
+                        <Input
+                            placeholder='Quantity'
+                            type='number'
+                            value={quantity}
+                            onChange={handleQuantityChange}
+                        />
+                    </Form.Field>
+                    <Form.Field>
+                        <Input
+                            placeholder='Price'
+                            type='number'
+                            step='0.01'
+                            value={price}
+                            onChange={e => setPrice(e.target.value)}
+                            disabled
+                        />
+                    </Form.Field>
+                    <Form.Field>
+                        <Input
+                            placeholder='Total Price'
+                            type='number'
+                            step='0.01'
+                            value={totalPrice}
+                            disabled
+                        />
+                    </Form.Field>
+                    {errorMessage && (
+                        <Message negative>
+                            <Message.Header>Error</Message.Header>
+                            <p>{errorMessage}</p>
+                        </Message>
+                    )}
+                    <Button type='submit' primary disabled={totalPrice > parseFloat(walletDetails.balance)}>Buy Stock</Button>
+                    <Button type='button' color='red' onClick={handleSellStock}>Sell Stock</Button>
+                </Form>
+            </Segment>
+        )}
             <Modal open={open} onClose={() => setOpen(false)}>
-            <Modal.Header>Wallet Details</Modal.Header>
-            <Modal.Content>
-                <Header as='h3'>{walletDetails.wallet_name}</Header>
-                <p>Balance: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.balance))}</p>
-                <p>Current Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.current_value))}</p>
-                <Table celled>
-                    <Table.Header>
-                        <Table.Row>
-                            <Table.HeaderCell>Stock Symbol</Table.HeaderCell>
-                            <Table.HeaderCell>Quantity</Table.HeaderCell>
-                            <Table.HeaderCell>Bought Price</Table.HeaderCell>
-                            <Table.HeaderCell>Current Price</Table.HeaderCell>
-                            <Table.HeaderCell>Current Value</Table.HeaderCell>
-                        </Table.Row>
-                    </Table.Header>
-                    <Table.Body>
-                        {walletDetails.stocks && walletDetails.stocks.map(stock => (
-                            <Table.Row key={stock.symbol}>
-                                <Table.Cell>{stock.symbol}</Table.Cell>
-                                <Table.Cell>{stock.quantity}</Table.Cell>
-                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.bought_price))}</Table.Cell>
-                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.current_price))}</Table.Cell>
-                                <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.current_value))}</Table.Cell>
+                <Modal.Header>Wallet Details</Modal.Header>
+                <Modal.Content>
+                    <Header as='h3'>{walletDetails.wallet_name}</Header>
+                    <p>Balance: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.balance))}</p>
+                    <p>Current Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.current_value))}</p>
+                    <Table celled>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell>Stock Symbol</Table.HeaderCell>
+                                <Table.HeaderCell>Quantity</Table.HeaderCell>
+                                <Table.HeaderCell>Bought Price</Table.HeaderCell>
+                                <Table.HeaderCell>Current Value</Table.HeaderCell>
                             </Table.Row>
-                        ))}
-                    </Table.Body>
-                </Table>
-            </Modal.Content>
-            <Modal.Actions>
-                <Button onClick={() => setOpen(false)}>Close</Button>
-            </Modal.Actions>
-        </Modal>
+                        </Table.Header>
+                        <Table.Body>
+                            {walletDetails.stocks && walletDetails.stocks.map(stock => (
+                                <Table.Row key={stock.symbol}>
+                                    <Table.Cell>{stock.symbol}</Table.Cell>
+                                    <Table.Cell>{stock.quantity}</Table.Cell>
+                                    <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.bought_price))}</Table.Cell>
+                                    <Table.Cell>{Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(stock.current_value))}</Table.Cell>
+                                </Table.Row>
+                            ))}
+                        </Table.Body>
+                    </Table>
+                </Modal.Content>
+                <Modal.Actions>
+                    <Button onClick={() => setOpen(false)}>Close</Button>
+                </Modal.Actions>
+            </Modal>
             <Modal open={renameOpen} onClose={() => setRenameOpen(false)}>
                 <Modal.Header>Rename Wallet</Modal.Header>
                 <Modal.Content>
@@ -314,6 +382,50 @@ const Wallets = ({ user, watchlist }) => {
                     <Button onClick={() => setRenameOpen(false)}>Close</Button>
                 </Modal.Actions>
             </Modal>
+            <Portal open={stockPortalOpen} onClose={() => setStockPortalOpen(false)}>
+                <Segment style={{ margin: 'auto', left: '25%', position: 'fixed', top: '10%', zIndex: 1000, width: '50%' }}>
+                    <Segment>
+                        <Grid columns={2}>
+                            <Grid.Column verticalAlign='middle'>
+                                <Header as='h2'>{stock.symbol} <em style={{ opacity: '50%', textEmphasisColor: 'gray' }}>-{stock.exchange}</em></Header>
+                            </Grid.Column>
+                            <Grid.Column textAlign='right'>
+                                <Button
+                                    icon
+                                    as={Link}
+                                    to={`/apps/finance/stock/${stock.symbol}`}
+                                >
+                                    <Icon name='angle double right' color="black" />
+                                    See More
+                                </Button>
+                            </Grid.Column>
+                        </Grid>
+                    </Segment>
+                    <Segment>
+                        <Grid columns={3}>
+                            <Grid.Column width={6}>
+                                <Header as='h3'>Stock Information</Header>
+                                <p>Current Price: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.currentPrice)}</p>
+                                <p>High: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.regularMarketDayHigh)}</p>
+                                <p>Low: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.regularMarketDayLow)}</p>
+                                <p>Open: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.regularMarketOpen)}</p>
+                                <p>Close: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.regularMarketPreviousClose)}</p>
+                                <p>Volume: {Intl.NumberFormat().format(stock.regularMarketVolume)}</p>
+                            </Grid.Column>
+                            <Grid.Column width={2}>
+                                <Divider vertical />
+                            </Grid.Column>
+                            <Grid.Column width={8} textAlign='right'>
+                                <Header as='h3'>{stock.shortName}</Header>
+                                <p>Website: <a href={stock.website}>Home</a> / <a href={stock.irWebsite}>Investor Relations</a></p>
+                                <p>Industry: {stock.industry} </p>
+                                <p>Sector: {stock.sector}</p>
+                                <p>Market Cap: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(stock.marketCap)}</p>
+                            </Grid.Column>
+                        </Grid>
+                    </Segment>
+                </Segment>
+            </Portal>
         </Container>
     );
 };

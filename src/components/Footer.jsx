@@ -29,7 +29,7 @@ const Footer = () => (
                             Footer Header
                         </Header>
                         <p>
-                            Extra space for a call to action inside the footer that could help re-engage users.
+                            The theme is created by Semantic Org.
                         </p>
                     </Grid.Column>
                 </Grid.Row>
