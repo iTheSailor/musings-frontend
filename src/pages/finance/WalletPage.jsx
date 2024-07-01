@@ -171,11 +171,11 @@ const WalletPage = () => {
                         <Header as='h3'>Wallet Details</Header>
                         <Grid columns={2} divided>
                             <Grid.Row>
-                                <Grid.Column>
+                                <Grid.Column textAlign='left' verticalAlign='middle'>
                                     <p>Cash in Hand: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(parseFloat(walletDetails.balance))}</p>
                                     <p>Total Stock Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(totalStockValue)}</p>
                                     <p>Total Wallet Value: {Intl.NumberFormat("en-US", { style: 'currency', currency: 'USD' }).format(totalWalletValue)}</p>
-                                    <p>Change in Value: {walletChange}%</p>
+                                    
                                 </Grid.Column>
                                 <Grid.Column>
                                     <Header as='h4'>Stocks Held</Header>
@@ -245,7 +245,7 @@ const WalletPage = () => {
                                     onChange={e => setBuyQuantity(e.target.value)}
                                 />
                             </Form.Field>
-                            <Button type='submit' primary>Buy</Button>
+                            <Button type='submit' primary fluid>Buy</Button>
                         </Form>
                     </Segment>
                     <Segment>
@@ -273,7 +273,7 @@ const WalletPage = () => {
                                     onChange={e => setSellQuantity(e.target.value)}
                                 />
                             </Form.Field>
-                            <Button type='submit' primary>Sell</Button>
+                            <Button type='submit' secondary fluid>Sell</Button>
                         </Form>
                     </Segment>
 

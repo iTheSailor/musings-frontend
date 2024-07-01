@@ -31,6 +31,9 @@ const HomepageHeading = ({ mobile }) => (
           This site is under construction, please bear in mind that some features may not work as expected.
         </p>
         <p>
+          <em>You can use username: user and password: user to log in</em>
+        </p>
+        <p>
           The frontend of this website is built with React, Node.js, Semantic UI and deployed on Render.
         </p>
         <p>
