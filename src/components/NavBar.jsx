@@ -1,9 +1,9 @@
 import React from 'react';
-import { Menu, Segment, Button, Container, Icon, Sidebar } from 'semantic-ui-react';
+import { Menu, Segment, Button, Container, Icon, Sidebar, Message, Dimmer } from 'semantic-ui-react';
 import { createMedia } from '@artsy/fresnel';
 import PropTypes from 'prop-types';
 import { InView } from 'react-intersection-observer';
-import { Navigate, useLocation } from 'react-router-dom'; // Import useLocation hook from react-router-dom
+import { useLocation } from 'react-router-dom'; // Import useLocation hook to get the current location
 import HomepageHeading from '../components/HomepageHeading.jsx'; // Make sure this path is correct
 import NavDropdown from './NavLinks.jsx'; // Make sure this path is correct
 import IsPortal from './IsPortal.jsx'; // Make sure this path is correct
@@ -28,15 +28,10 @@ const onSignupSuccess = (data) => {
   localStorage.setItem('token', data.token);
 };
 
-
 const onLogOut = () => {
   localStorage.removeItem('token');
   window.location.reload();
 };
-
-
-
-
 
 // Convert DesktopContainer to a functional component to use hooks
 const DesktopContainer = ({ children }) => {
@@ -44,10 +39,10 @@ const DesktopContainer = ({ children }) => {
   const location = useLocation(); // Use useLocation hook to get the current location
   const isHomepage = location.pathname === '/';
   const toggleFixedMenu = (inView) => setFixed(!inView);
-  const { loggedIn, logOut } = useAuth() || {}; // Use the authentication state and logOut function
+  const { loggedIn } = useAuth() || {}; // Use the authentication state and logOut function
 
   return (
-    <Media greaterThan='mobile' className='AppNavbar' style={{marginBottom:'2rem'}}>
+    <Media greaterThan='mobile' className='AppNavbar' style={{ marginBottom: '2rem' }}>
       <InView onChange={toggleFixedMenu}>
         <Segment
           inverted
@@ -60,7 +55,6 @@ const DesktopContainer = ({ children }) => {
             pointing={!fixed}
             secondary={!fixed}
             size='large'
-            
           >
             <Container>
               <NavDropdown />
@@ -68,7 +62,7 @@ const DesktopContainer = ({ children }) => {
                 <>
                   <Menu.Item position='right'>
                     <IsPortal header="Login" label="Login" >
-                      <LoginForm onLoginSuccess={onLoginSuccess}/>
+                      <LoginForm onLoginSuccess={onLoginSuccess} />
                     </IsPortal>
                   </Menu.Item>
                   <Menu.Item>
@@ -79,9 +73,7 @@ const DesktopContainer = ({ children }) => {
                 </>
               ) : (
                 <Menu.Item position='right'>
-                  
-                  <LogOut/>
-                  
+                  <LogOut />
                 </Menu.Item>
               )}
             </Container>
@@ -107,7 +99,6 @@ const MobileContainer = ({ children }) => {
   const handleToggle = () => setSidebarOpened(true);
   const { loggedIn } = useAuth() || {}; // Use the loggedIn state from the AuthContext
 
-
   return (
     <Media as={Sidebar.Pushable} at='mobile'>
       <Sidebar.Pushable>
@@ -130,6 +121,11 @@ const MobileContainer = ({ children }) => {
         </Sidebar>
 
         <Sidebar.Pusher dimmed={sidebarOpened}>
+          <Dimmer active>
+            <Message warning>
+              This page is intended for tablet or desktop viewing only.
+            </Message>
+          </Dimmer>
           <Segment
             inverted
             textAlign='center'
@@ -142,20 +138,20 @@ const MobileContainer = ({ children }) => {
                   <Icon name='sidebar' />
                 </Menu.Item>
                 {!loggedIn && (
-                <Menu.Item position='right'>
-                  <Button as='a' inverted>
-                    Log in
-                  </Button>
-                  <Button as='a' inverted style={{ marginLeft: '0.5em' }}>
-                    Sign Up
-                  </Button>
-                </Menu.Item>
-              )}
-              {loggedIn && (
-                <Menu.Item position='right'>
-                  <LogOut/>
-                </Menu.Item>
-              )}
+                  <Menu.Item position='right'>
+                    <Button as='a' inverted>
+                      Log in
+                    </Button>
+                    <Button as='a' inverted style={{ marginLeft: '0.5em' }}>
+                      Sign Up
+                    </Button>
+                  </Menu.Item>
+                )}
+                {loggedIn && (
+                  <Menu.Item position='right'>
+                    <LogOut />
+                  </Menu.Item>
+                )}
               </Menu>
             </Container>
             {isHomepage && <HomepageHeading mobile />}

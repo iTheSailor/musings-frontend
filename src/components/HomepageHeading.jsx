@@ -12,7 +12,7 @@ const HomepageHeading = ({ mobile }) => (
           fontSize: mobile ? '2em' : '4em',
           fontWeight: 'normal',
           marginBottom: 0,
-          marginTop: '1.5em',
+          marginTop: '1em',
         }}
       />
       <Header
@@ -38,6 +38,9 @@ const HomepageHeading = ({ mobile }) => (
         </p>
         <p>
           The backend is built with Django and deployed on AWS.
+        </p>
+        <p style={{color:'red'}}>
+          THIS SITE IS FOR DEMONSTRATION PURPOSES ONLY AND INTENDED ONLY FOR TABLET/DESKTOP VIEWING.
         </p>
         <p>
           Last updated: July 1st, 2024
