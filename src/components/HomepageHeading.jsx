@@ -28,23 +28,16 @@ const HomepageHeading = ({ mobile }) => (
       <Container text size='huge'  >
         <Icon name='warning sign' style={{color:'yellow'}}/>
         <p style={{color:'yellow'}}>
-          This site is under construction, please bear in mind that some features may not work as expected.
-        </p>
-        <p>
-          <em>You can use username: user and password: user to log in</em>
+          This site is under construction, please bear in mind that some features may not work as expected. It is intended to be viewed on desktop browsers.
         </p>
         <p>
           The frontend of this website is built with React, Node.js, Semantic UI and deployed on Render.
         </p>
         <p>
-          The backend is built with Django and deployed on AWS. THE BACKEND IS CURRENTLY OFFLINE DUE TO FINANCIAL REASONS, TO SEE THE REPO OR A LIVE DEMO, FEEL FREE CONTACT ME AT ibrahim.salir@gmail.com 
-        </p>
-          
-        <p style={{color:'red'}}>
-          THIS SITE IS FOR DEMONSTRATION PURPOSES ONLY AND INTENDED ONLY FOR TABLET/DESKTOP VIEWING.
+          The backend is built with Django and deployed on AWS. The backend is currently offline due to cost reasons. Feel free to email me at ibrahim.salir@gmail.com to get a live demo or peak into the repository.
         </p>
         <p>
-          Last updated: July 1st, 2024
+          Last updated: January 2025
         </p>
 
       </Container>
