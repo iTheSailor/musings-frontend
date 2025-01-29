@@ -37,7 +37,7 @@ const HomepageHeading = ({ mobile }) => (
           The frontend of this website is built with React, Node.js, Semantic UI and deployed on Render.
         </p>
         <p>
-          The backend is built with Django and deployed on AWS. THE BACKEND IS CURRENTLY OFFLINE DUE TO FINANCIAL REASONS, TO SEE THE REPO OR A LIVE DEMO, FEEL FREE CONTACT ME AT "ibrahim.salir@gmail.com" 
+          The backend is built with Django and deployed on AWS. THE BACKEND IS CURRENTLY OFFLINE DUE TO FINANCIAL REASONS, TO SEE THE REPO OR A LIVE DEMO, FEEL FREE CONTACT ME AT ibrahim.salir@gmail.com 
         </p>
           
         <p style={{color:'red'}}>
