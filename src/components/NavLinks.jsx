@@ -27,8 +27,8 @@ const NavDropdown = () => (
         <DropdownItem>Finance</DropdownItem>
       </DropdownMenu>
     </Dropdown>
-    <MenuItem className='link item' href='/portfolio'>Portfolio</MenuItem>
-    <MenuItem className='link item' href='/contact'>Contact Me</MenuItem>
+    {/* <MenuItem className='link item' href='/portfolio'>Portfolio</MenuItem> */}
+    {/* <MenuItem className='link item' href='/contact'>Contact Me</MenuItem> */}
     </>
 )
 

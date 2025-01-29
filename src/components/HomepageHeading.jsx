@@ -29,12 +29,13 @@ const HomepageHeading = ({ mobile }) => (
         <Icon name='warning sign' style={{color:'yellow'}}/>
         <p style={{color:'yellow'}}>
           This site is under construction, please bear in mind that some features may not work as expected. It is intended to be viewed on desktop browsers.
+          The backend is currently offline due to cost reasons. Feel free to email me at <a href="mailto:">ibrahim.salir@gmail.com</a> to get a live demo or  peak into the repository.
         </p>
         <p>
           The frontend of this website is built with React, Node.js, Semantic UI and deployed on Render.
         </p>
         <p>
-          The backend is built with Django and deployed on AWS. The backend is currently offline due to cost reasons. Feel free to email me at ibrahim.salir@gmail.com to get a live demo or peak into the repository.
+          The backend is built with Django and deployed on AWS. 
         </p>
         <p>
           Last updated: January 2025
